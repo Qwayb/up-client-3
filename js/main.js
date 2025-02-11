@@ -50,6 +50,10 @@ Vue.component('task-card', {
         <p v-if="task.explanation">Return Reason: {{ task.explanation }}</p>
         <p>Deadline: {{ task.deadline }}</p>
         <p>Last Edited: {{ task.lastEdited }}</p>
+        <p v-if="columnIndex === 3">
+          <strong v-if="task.completedOnTime">Completed on time</strong>
+          <strong v-else>Completed late</strong>
+        </p>
         <button v-if="columnIndex !== 3" @click="editTask">Edit</button>
         <button v-if="columnIndex !== 3" @click="moveTaskToNextColumn">Move to Next Column</button>
         <button v-if="columnIndex === 0" @click="deleteTask">Delete</button>
@@ -65,7 +69,6 @@ Vue.component('task-card', {
   `
 });
 
-// Компонент столбца
 Vue.component('column', {
     props: ['columnTitle', 'tasks', 'columnIndex', 'moveTask', 'moveTaskBack', 'removeTask', 'isButton', 'columns'],
     data() {
@@ -95,6 +98,7 @@ Vue.component('column', {
                 this.tasks.push(newTask);
                 this.showModal = false;
                 this.clearForm();
+                this.$emit('save-tasks');
             } else {
                 alert('Please fill in the title and deadline.');
             }
@@ -148,7 +152,23 @@ new Vue({
             ]
         };
     },
+    created() {
+        this.loadTasks();
+    },
     methods: {
+        saveTasks() {
+            localStorage.setItem('kanbanTasks', JSON.stringify(this.columns));
+        },
+        loadTasks() {
+            const savedTasks = localStorage.getItem('kanbanTasks');
+            if (savedTasks) {
+                this.columns = JSON.parse(savedTasks);
+            }
+        },
+        clearStorage() {
+            localStorage.removeItem('kanbanTasks');
+            location.reload();
+        },
         moveTask(task, nextColumnIndex) {
             const currentColumn = this.columns.find(column => column.tasks.includes(task));
             if (currentColumn) {
@@ -160,6 +180,7 @@ new Vue({
             if (nextColumnIndex === 3) {
                 this.onTaskCompleted(task);
             }
+            this.saveTasks();
         },
         moveTaskBack(task, prevColumnIndex) {
             let explanation = prompt('Enter the reason for returning the task:');
@@ -173,15 +194,18 @@ new Vue({
             if (prevColumnIndex >= 0) {
                 this.columns[prevColumnIndex].tasks.push(task);
             }
+            this.saveTasks();
         },
         removeTask(task, columnIndex) {
             this.columns[columnIndex].tasks = this.columns[columnIndex].tasks.filter(t => t !== task);
+            this.saveTasks();
         },
         onTaskCompleted(task) {
             task.isCompleted = true;
             const deadlineDate = new Date(task.deadline);
             const now = new Date();
             task.completedOnTime = now <= deadlineDate;
+            this.saveTasks();
         }
     },
     template: `
@@ -198,8 +222,10 @@ new Vue({
           :moveTask="moveTask"
           :moveTaskBack="moveTaskBack"
           :removeTask="removeTask"
+          @save-tasks="saveTasks"
         />
       </div>
+      <button @click="clearStorage">Clear Storage</button>
     </div>
   `
 });
