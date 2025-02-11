@@ -82,7 +82,7 @@ Vue.component('column', {
     methods: {
         addTask() {
             if (this.columnIndex === 0) {
-                this.showModal = true;
+                this.$emit('open-modal');
             }
         },
         saveNewTask() {
@@ -125,18 +125,19 @@ Vue.component('column', {
           :columns="columns"
         />
       </div>
+    </div>
 
-      <div v-if="showModal" class="modal">
-        <div class="modal-content">
-          <h3>Create New Task</h3>
-          <input v-model="newTaskTitle" placeholder="Title" />
-          <textarea v-model="newTaskDescription" placeholder="Description"></textarea>
-          <input type="date" v-model="newTaskDeadline" />
-          <button @click="saveNewTask">Save</button>
-          <button @click="showModal = false">Cancel</button>
-        </div>
+      <div :class="['modal', { active: showModal }]">
+      <div class="modal-content">
+        <h3>Create New Task</h3>
+        <input v-model="newTaskTitle" placeholder="Title" />
+        <textarea v-model="newTaskDescription" placeholder="Description"></textarea>
+        <input type="date" v-model="newTaskDeadline" />
+        <button @click="saveNewTask">Save</button>
+        <button @click="showModal = false">Cancel</button>
       </div>
     </div>
+  </div>
   `
 });
 
@@ -149,7 +150,11 @@ new Vue({
                 { title: 'Tasks in Progress', tasks: [], isButton: false },
                 { title: 'Testing', tasks: [], isButton: false },
                 { title: 'Completed Tasks', tasks: [], isButton: false }
-            ]
+            ],
+            showModal: false, // Управление видимостью модального окна
+            newTaskTitle: '',
+            newTaskDescription: '',
+            newTaskDeadline: ''
         };
     },
     created() {
@@ -168,6 +173,35 @@ new Vue({
         clearStorage() {
             localStorage.removeItem('kanbanTasks');
             location.reload();
+        },
+        openModal() {
+            this.showModal = true; // Открываем модальное окно
+        },
+        closeModal() {
+            this.showModal = false; // Закрываем модальное окно
+            this.clearForm();
+        },
+        clearForm() {
+            this.newTaskTitle = '';
+            this.newTaskDescription = '';
+            this.newTaskDeadline = '';
+        },
+        saveNewTask() {
+            if (this.newTaskTitle && this.newTaskDeadline) {
+                const newTask = {
+                    title: this.newTaskTitle,
+                    description: this.newTaskDescription,
+                    deadline: this.newTaskDeadline,
+                    lastEdited: new Date().toLocaleString(),
+                    isCompleted: false,
+                    completedOnTime: false
+                };
+                this.columns[0].tasks.push(newTask); // Добавляем задачу в первый столбец
+                this.closeModal(); // Закрываем модальное окно
+                this.saveTasks(); // Сохраняем задачи
+            } else {
+                alert('Please fill in the title and deadline.');
+            }
         },
         moveTask(task, nextColumnIndex) {
             const currentColumn = this.columns.find(column => column.tasks.includes(task));
@@ -222,10 +256,22 @@ new Vue({
           :moveTask="moveTask"
           :moveTaskBack="moveTaskBack"
           :removeTask="removeTask"
-          @save-tasks="saveTasks"
+          @open-modal="openModal"
         />
       </div>
-      <button @click="clearStorage">Clear Storage</button>
+      <button class="clear-storage-button" @click="clearStorage">Clear Storage</button>
+
+      <!-- Глобальное модальное окно -->
+      <div :class="['modal', { active: showModal }]">
+        <div class="modal-content">
+          <h3>Create New Task</h3>
+          <input v-model="newTaskTitle" placeholder="Title" />
+          <textarea v-model="newTaskDescription" placeholder="Description"></textarea>
+          <input type="date" v-model="newTaskDeadline" />
+          <button @click="saveNewTask">Save</button>
+          <button @click="closeModal">Cancel</button>
+        </div>
+      </div>
     </div>
   `
 });
