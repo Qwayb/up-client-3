@@ -68,19 +68,41 @@ Vue.component('task-card', {
 // Компонент столбца
 Vue.component('column', {
     props: ['columnTitle', 'tasks', 'columnIndex', 'moveTask', 'moveTaskBack', 'removeTask', 'isButton', 'columns'],
+    data() {
+        return {
+            showModal: false,
+            newTaskTitle: '',
+            newTaskDescription: '',
+            newTaskDeadline: ''
+        };
+    },
     methods: {
         addTask() {
-            if (this.columnIndex === 0) { // Только для первого столбца
+            if (this.columnIndex === 0) {
+                this.showModal = true;
+            }
+        },
+        saveNewTask() {
+            if (this.newTaskTitle && this.newTaskDeadline) {
                 const newTask = {
-                    title: 'New Task',
-                    description: 'Task description...',
-                    deadline: new Date().toLocaleDateString(),
+                    title: this.newTaskTitle,
+                    description: this.newTaskDescription,
+                    deadline: this.newTaskDeadline,
                     lastEdited: new Date().toLocaleString(),
                     isCompleted: false,
                     completedOnTime: false
                 };
                 this.tasks.push(newTask);
+                this.showModal = false;
+                this.clearForm();
+            } else {
+                alert('Please fill in the title and deadline.');
             }
+        },
+        clearForm() {
+            this.newTaskTitle = '';
+            this.newTaskDescription = '';
+            this.newTaskDeadline = '';
         }
     },
     template: `
@@ -99,11 +121,21 @@ Vue.component('column', {
           :columns="columns"
         />
       </div>
+
+      <div v-if="showModal" class="modal">
+        <div class="modal-content">
+          <h3>Create New Task</h3>
+          <input v-model="newTaskTitle" placeholder="Title" />
+          <textarea v-model="newTaskDescription" placeholder="Description"></textarea>
+          <input type="date" v-model="newTaskDeadline" />
+          <button @click="saveNewTask">Save</button>
+          <button @click="showModal = false">Cancel</button>
+        </div>
+      </div>
     </div>
   `
 });
 
-// Корневой компонент Vue
 new Vue({
     el: '#app',
     data() {
