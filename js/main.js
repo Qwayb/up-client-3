@@ -127,12 +127,15 @@ Vue.component('column', {
                 task.explanation = explanation;
             }
 
+            if (fromColumnIndex === 3) {
+                alert('You cant move from 3rd column!');
+                return;
+            }
+
             // Удаляем задачу из исходного столбца
             const fromColumn = this.$parent.columns[fromColumnIndex];
             const taskIndex = fromColumn.tasks.findIndex(t => t === task);
-            if (taskIndex !== -1) {
-                fromColumn.tasks.splice(taskIndex, 1); // Удаляем задачу из исходного столбца
-            }
+            fromColumn.tasks.splice(taskIndex, 1); // Удаляем задачу из исходного столбца
 
             this.tasks.push(task);
 
