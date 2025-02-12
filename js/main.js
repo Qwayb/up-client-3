@@ -42,8 +42,8 @@ Vue.component('task-card', {
             this.removeTask(this.task, this.columnIndex);
         }
     },
-    template: `
-    <div class="task-card" :class="taskClass">
+    template: 
+    `<div class="task-card" :class="taskClass">
       <div v-if="!isEditing">
         <p><strong>{{ task.title }}</strong></p>
         <p>{{ task.description }}</p>
@@ -65,12 +65,11 @@ Vue.component('task-card', {
         <input type="date" v-model="editedDeadline" />
         <button @click="saveTask">Save</button>
       </div>
-    </div>
-  `
+    </div>`
 });
 
 Vue.component('column', {
-    props: ['columnTitle', 'tasks', 'columnIndex', 'moveTask', 'moveTaskBack', 'removeTask', 'isButton', 'columns'],
+    props: ['columnTitle', 'tasks', 'columnIndex', 'moveTask', 'moveTaskBack', 'removeTask', 'isButton', 'columns', 'searchQuery'],
     data() {
         return {
             showModal: false,
@@ -107,15 +106,18 @@ Vue.component('column', {
             this.newTaskTitle = '';
             this.newTaskDescription = '';
             this.newTaskDeadline = '';
+        },
+        filterTasks(tasks) {
+            return tasks.filter(task => task.title.toLowerCase().includes(this.searchQuery.toLowerCase()));
         }
     },
-    template: `
-    <div class="column">
+    template: 
+    `<div class="column">
       <h2>{{ columnTitle }}</h2>
       <div v-if="isButton">
         <button @click="addTask">Add Task</button>
       </div>
-      <div v-for="(task, index) in tasks" :key="index">
+      <div v-for="(task, index) in filterTasks(tasks)" :key="index">
         <task-card 
           :task="task" 
           :columnIndex="columnIndex" 
@@ -126,8 +128,8 @@ Vue.component('column', {
         />
       </div>
     </div>
-
-      <div :class="['modal', { active: showModal }]">
+  
+    <div :class="['modal', { active: showModal }]">
       <div class="modal-content">
         <h3>Create New Task</h3>
         <input v-model="newTaskTitle" placeholder="Title" />
@@ -136,9 +138,7 @@ Vue.component('column', {
         <button @click="saveNewTask">Save</button>
         <button @click="showModal = false">Cancel</button>
       </div>
-    </div>
-  </div>
-  `
+    </div>`
 });
 
 new Vue({
@@ -151,10 +151,11 @@ new Vue({
                 { title: 'Testing', tasks: [], isButton: false },
                 { title: 'Completed Tasks', tasks: [], isButton: false }
             ],
-            showModal: false, // Управление видимостью модального окна
+            showModal: false,
             newTaskTitle: '',
             newTaskDescription: '',
-            newTaskDeadline: ''
+            newTaskDeadline: '',
+            searchQuery: ''
         };
     },
     created() {
@@ -175,10 +176,10 @@ new Vue({
             location.reload();
         },
         openModal() {
-            this.showModal = true; // Открываем модальное окно
+            this.showModal = true;
         },
         closeModal() {
-            this.showModal = false; // Закрываем модальное окно
+            this.showModal = false;
             this.clearForm();
         },
         clearForm() {
@@ -196,9 +197,9 @@ new Vue({
                     isCompleted: false,
                     completedOnTime: false
                 };
-                this.columns[0].tasks.push(newTask); // Добавляем задачу в первый столбец
-                this.closeModal(); // Закрываем модальное окно
-                this.saveTasks(); // Сохраняем задачи
+                this.columns[0].tasks.push(newTask);
+                this.closeModal();
+                this.saveTasks();
             } else {
                 alert('Please fill in the title and deadline.');
             }
@@ -246,8 +247,11 @@ new Vue({
             this.saveTasks();
         }
     },
-    template: `
-    <div>
+    template: 
+    `<div>
+      <div>
+        <input type="text" v-model="searchQuery" placeholder="Search tasks..." />
+      </div>
       <div class="board">
         <column
           v-for="(column, index) in columns"
@@ -260,22 +264,10 @@ new Vue({
           :moveTask="moveTask"
           :moveTaskBack="moveTaskBack"
           :removeTask="removeTask"
+          :searchQuery="searchQuery"
           @open-modal="openModal"
         />
       </div>
       <button class="clear-storage-button" @click="clearStorage">Clear Storage</button>
-
-      <!-- Глобальное модальное окно -->
-      <div :class="['modal', { active: showModal }]">
-        <div class="modal-content">
-          <h3>Create New Task</h3>
-          <input v-model="newTaskTitle" placeholder="Title" />
-          <textarea v-model="newTaskDescription" placeholder="Description"></textarea>
-          <input type="date" v-model="newTaskDeadline" />
-          <button @click="saveNewTask">Save</button>
-          <button @click="closeModal">Cancel</button>
-        </div>
-      </div>
-    </div>
-  `
+    </div>`
 });

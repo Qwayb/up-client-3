@@ -193,3 +193,14 @@ button {
 .modal.active .modal-content {
     transform: translateY(0);
 }
+
+.search-input {
+    width: 100%;
+    max-width: 400px;
+    padding: 8px;
+    margin: 16px auto;
+    display: block;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+}
