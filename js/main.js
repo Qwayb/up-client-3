@@ -217,16 +217,20 @@ new Vue({
             this.saveTasks();
         },
         moveTaskBack(task, prevColumnIndex) {
-            let explanation = prompt('Enter the reason for returning the task:');
-            if (explanation) {
-                task.explanation = explanation;
+            if (prevColumnIndex === 1) {
+              const explanation = prompt('Enter the reason for returning the task:');
+              if (!explanation) {
+                alert('Return reason is required!'); 
+                return;
+              }
+              task.explanation = explanation;
             }
             const currentColumn = this.columns.find(column => column.tasks.includes(task));
             if (currentColumn) {
-                currentColumn.tasks = currentColumn.tasks.filter(t => t !== task);
+              currentColumn.tasks = currentColumn.tasks.filter(t => t !== task);
             }
             if (prevColumnIndex >= 0) {
-                this.columns[prevColumnIndex].tasks.push(task);
+              this.columns[prevColumnIndex].tasks.push(task);
             }
             this.saveTasks();
         },
