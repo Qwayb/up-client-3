@@ -9,15 +9,17 @@ body {
     gap: 16px;
     padding: 16px;
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 0 auto; 
 }
 .column {
-    flex: 1;
+    min-height: 100px;
+    padding: 16px;
     background: #ffffff;
     border-radius: 12px;
-    padding: 16px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-width: 200px;
+    min-height: 300px;
 }
 .column:hover {
     transform: translateY(-4px);
@@ -30,12 +32,16 @@ body {
     margin-bottom: 16px;
 }
 .task-card {
+    cursor: grab;
     background: #ffffff;
     border-radius: 8px;
     padding: 16px;
     margin-bottom: 12px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.task-card:active{
+    cursor: grabbing;
 }
 .task-card:hover {
     transform: translateY(-2px);

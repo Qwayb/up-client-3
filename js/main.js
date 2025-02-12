@@ -27,23 +27,23 @@ Vue.component('task-card', {
             this.task.lastEdited = new Date().toLocaleString();
             this.isEditing = false;
         },
-        moveTaskToNextColumn() {
-            const nextColumnIndex = this.columnIndex + 1;
-            if (nextColumnIndex < this.columns.length) {
-                this.moveTask(this.task, nextColumnIndex);
-            }
-        },
-        moveTaskToPreviousColumn() {
-            if (this.columnIndex > 0) {
-                this.moveTaskBack(this.task, this.columnIndex - 1);
-            }
-        },
         deleteTask() {
             this.removeTask(this.task, this.columnIndex);
+        },
+        onDragStart(event) {
+            event.dataTransfer.setData('text/plain', JSON.stringify({
+                task: this.task,
+                fromColumnIndex: this.columnIndex
+            }));
         }
     },
     template: 
-    `<div class="task-card" :class="taskClass">
+    `<div 
+        class="task-card" 
+        :class="taskClass"
+        draggable="true"
+        @dragstart="onDragStart"
+    >
       <div v-if="!isEditing">
         <p><strong>{{ task.title }}</strong></p>
         <p>{{ task.description }}</p>
@@ -55,9 +55,7 @@ Vue.component('task-card', {
           <strong v-else>Completed late</strong>
         </p>
         <button v-if="columnIndex !== 3" @click="editTask">Edit</button>
-        <button v-if="columnIndex !== 3" @click="moveTaskToNextColumn">Move to Next Column</button>
         <button v-if="columnIndex === 0" @click="deleteTask">Delete</button>
-        <button v-if="columnIndex === 2" @click="moveTaskToPreviousColumn">Move to Previous Column</button>
       </div>
       <div v-else>
         <input v-model="editedTitle" placeholder="Title" />
@@ -81,7 +79,7 @@ Vue.component('column', {
     methods: {
         addTask() {
             if (this.columnIndex === 0) {
-              this.showModal = true;
+                this.$emit('open-modal'); // Передаем событие в корневой компонент
             }
         },
         saveNewTask() {
@@ -109,40 +107,63 @@ Vue.component('column', {
         },
         filterTasks(tasks) {
             return tasks.filter(task => task.title.toLowerCase().includes(this.searchQuery.toLowerCase()));
+        },
+        onDragOver(event) {
+            event.preventDefault();
+        },
+        onDrop(event) {
+            event.preventDefault();
+            const data = JSON.parse(event.dataTransfer.getData('text/plain'));
+            const task = data.task;
+            const fromColumnIndex = data.fromColumnIndex;
+            const toColumnIndex = this.columnIndex;
+
+            if (toColumnIndex === 1 && fromColumnIndex === 2) {
+                const explanation = prompt('Enter the reason for returning the task:');
+                if (!explanation) {
+                    alert('Return reason is required!');
+                    return;
+                }
+                task.explanation = explanation;
+            }
+
+            // Удаляем задачу из исходного столбца
+            const fromColumn = this.$parent.columns[fromColumnIndex];
+            const taskIndex = fromColumn.tasks.findIndex(t => t === task);
+            if (taskIndex !== -1) {
+                fromColumn.tasks.splice(taskIndex, 1); // Удаляем задачу из исходного столбца
+            }
+
+            this.tasks.push(task);
+
+            if (toColumnIndex === 3) {
+                this.$parent.onTaskCompleted(task);
+            }
+
+            this.$parent.saveTasks();
         }
     },
-    template: 
-    `
-    <div>
-        <div class="column">
+    template: `
+    <div 
+        class="column"
+        @dragover="onDragOver"
+        @drop="onDrop"
+    >
         <h2>{{ columnTitle }}</h2>
         <div v-if="isButton">
             <button @click="addTask">Add Task</button>
         </div>
         <div v-for="(task, index) in filterTasks(tasks)" :key="index">
             <task-card 
-            :task="task" 
-            :columnIndex="columnIndex" 
-            :moveTask="moveTask" 
-            :moveTaskBack="moveTaskBack"
-            :removeTask="removeTask" 
-            :columns="columns"
+                :task="task" 
+                :columnIndex="columnIndex" 
+                :moveTask="moveTask" 
+                :moveTaskBack="moveTaskBack"
+                :removeTask="removeTask" 
+                :columns="columns"
             />
         </div>
-        </div>
-
-        <div :class="['modal', { active: showModal }]">
-        <div class="modal-content">
-            <h3>Create New Task</h3>
-            <input v-model="newTaskTitle" placeholder="Title" />
-            <textarea v-model="newTaskDescription" placeholder="Description"></textarea>
-            <input type="date" v-model="newTaskDeadline" />
-            <button @click="saveNewTask">Save</button>
-            <button @click="showModal = false">Cancel</button>
-        </div>
-        </div>
-    </div>
-    `
+    </div>`
 });
 
 new Vue({
@@ -223,19 +244,19 @@ new Vue({
         },
         moveTaskBack(task, prevColumnIndex) {
             if (prevColumnIndex === 1) {
-              const explanation = prompt('Enter the reason for returning the task:');
-              if (!explanation) {
-                alert('Return reason is required!'); 
-                return;
-              }
-              task.explanation = explanation;
+                const explanation = prompt('Enter the reason for returning the task:');
+                if (!explanation) {
+                    alert('Return reason is required!');
+                    return;
+                }
+                task.explanation = explanation;
             }
             const currentColumn = this.columns.find(column => column.tasks.includes(task));
             if (currentColumn) {
-              currentColumn.tasks = currentColumn.tasks.filter(t => t !== task);
+                currentColumn.tasks = currentColumn.tasks.filter(t => t !== task);
             }
             if (prevColumnIndex >= 0) {
-              this.columns[prevColumnIndex].tasks.push(task);
+                this.columns[prevColumnIndex].tasks.push(task);
             }
             this.saveTasks();
         },
@@ -251,8 +272,8 @@ new Vue({
             this.saveTasks();
         }
     },
-    template: 
-    `<div>
+    template: `
+    <div>
       <div>
         <input type="text" v-model="searchQuery" placeholder="Search tasks..." />
       </div>
@@ -273,5 +294,17 @@ new Vue({
         />
       </div>
       <button class="clear-storage-button" @click="clearStorage">Clear Storage</button>
+
+      <!-- Модальное окно -->
+      <div :class="['modal', { active: showModal }]">
+        <div class="modal-content">
+          <h3>Create New Task</h3>
+          <input v-model="newTaskTitle" placeholder="Title" />
+          <textarea v-model="newTaskDescription" placeholder="Description"></textarea>
+          <input type="date" v-model="newTaskDeadline" />
+          <button @click="saveNewTask">Save</button>
+          <button @click="closeModal">Cancel</button>
+        </div>
+      </div>
     </div>`
 });
