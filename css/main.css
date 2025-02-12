@@ -194,7 +194,7 @@ button {
     transform: translateY(0);
 }
 
-.search-input {
+input {
     width: 100%;
     max-width: 400px;
     padding: 8px;

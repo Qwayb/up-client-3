@@ -81,7 +81,7 @@ Vue.component('column', {
     methods: {
         addTask() {
             if (this.columnIndex === 0) {
-                this.$emit('open-modal');
+              this.showModal = true;
             }
         },
         saveNewTask() {
@@ -112,33 +112,37 @@ Vue.component('column', {
         }
     },
     template: 
-    `<div class="column">
-      <h2>{{ columnTitle }}</h2>
-      <div v-if="isButton">
-        <button @click="addTask">Add Task</button>
-      </div>
-      <div v-for="(task, index) in filterTasks(tasks)" :key="index">
-        <task-card 
-          :task="task" 
-          :columnIndex="columnIndex" 
-          :moveTask="moveTask" 
-          :moveTaskBack="moveTaskBack"
-          :removeTask="removeTask" 
-          :columns="columns"
-        />
-      </div>
+    `
+    <div>
+        <div class="column">
+        <h2>{{ columnTitle }}</h2>
+        <div v-if="isButton">
+            <button @click="addTask">Add Task</button>
+        </div>
+        <div v-for="(task, index) in filterTasks(tasks)" :key="index">
+            <task-card 
+            :task="task" 
+            :columnIndex="columnIndex" 
+            :moveTask="moveTask" 
+            :moveTaskBack="moveTaskBack"
+            :removeTask="removeTask" 
+            :columns="columns"
+            />
+        </div>
+        </div>
+
+        <div :class="['modal', { active: showModal }]">
+        <div class="modal-content">
+            <h3>Create New Task</h3>
+            <input v-model="newTaskTitle" placeholder="Title" />
+            <textarea v-model="newTaskDescription" placeholder="Description"></textarea>
+            <input type="date" v-model="newTaskDeadline" />
+            <button @click="saveNewTask">Save</button>
+            <button @click="showModal = false">Cancel</button>
+        </div>
+        </div>
     </div>
-  
-    <div :class="['modal', { active: showModal }]">
-      <div class="modal-content">
-        <h3>Create New Task</h3>
-        <input v-model="newTaskTitle" placeholder="Title" />
-        <textarea v-model="newTaskDescription" placeholder="Description"></textarea>
-        <input type="date" v-model="newTaskDeadline" />
-        <button @click="saveNewTask">Save</button>
-        <button @click="showModal = false">Cancel</button>
-      </div>
-    </div>`
+    `
 });
 
 new Vue({
